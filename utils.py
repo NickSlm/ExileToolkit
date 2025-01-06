@@ -28,31 +28,20 @@ def init_db():
                 maps = {}
     return maps
 
+def check_if_exists(map, map_type):
+    maps = init_db()
+    if map in maps.keys():
+        print(map, maps[map])
+
 def add_to_json(new_data):
-    if not os.path.exists("maps.json") or os.path.getsize("maps.json") == 0:
-        file_data = {}
-    else:
-        with open("maps.json", "r+") as file:
-            try:
-                file_data = json.load(file)
-            except json.JSONDecodeError:
-                file_data = {}
-                
-                
-    file_data.update(new_data)
+    maps = init_db()  
+    maps.update(new_data)
     # update the json with the updated dict
     with open("maps.json", 'w') as file:    
-        json.dump(file_data, file, indent = 4)
+        json.dump(maps, file, indent = 4)
 
 def remove_from_json(map):
-    if not os.path.exists("maps.json") or os.path.getsize("maps.json") == 0:
-        maps = {}
-    else:
-        with open("maps.json") as file:
-            try:
-                maps = json.load(file)
-            except json.JSONDecodeError:
-                maps = {}
+    maps = init_db()
     maps.pop(map)
     with open("maps.json", 'w') as file:
         json.dump(maps, file, indent = 4)

@@ -4,7 +4,7 @@ from PyQt5.QtGui import *
 from PyQt5 import QtGui
 from utils import get_window_info
 from pynput import keyboard
-from utils import add_to_json, init_db, remove_from_json
+from utils import add_to_json, init_db, remove_from_json, check_if_exists
 import json
 
 class OverlayWidget(QWidget):
@@ -26,6 +26,21 @@ class OverlayWidget(QWidget):
         
         self.setWindowFlags(Qt.Window|Qt.X11BypassWindowManagerHint|Qt.WindowStaysOnTopHint|Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet("""
+                           QLabel {
+                               background-color: rgba(0, 0, 0, 0);
+                               color: rgba(255, 255, 255,255);
+                               text-align: center;
+                           }
+                           QListWidget {
+                               background-color: rgba(0, 0, 0, 204);
+                           }
+                           QLineEdit {
+                               background-color: rgba(0, 0, 0, 204);
+                               color: rgba(255, 255, 255, 255);
+                           }
+
+                           """)
         
         self.update_position()
         self.init_ui()
@@ -36,10 +51,16 @@ class OverlayWidget(QWidget):
     
     def init_ui(self):
         layout = QGridLayout()
-        
-        # Input Item To List
+        self.setFixedSize(600,400)
         input_layout_good = QHBoxLayout()
         input_layout_bad = QHBoxLayout()
+        
+        header_1 = QLabel("Good Bosses")
+        header_1.setAlignment(Qt.AlignCenter)
+        header_1.setStyleSheet("font-size: 16px;")
+        header_2 = QLabel("Bad Bosses")
+        header_2.setStyleSheet("font-size: 16px;")
+        header_2.setAlignment(Qt.AlignCenter)
         
         input_good = QLineEdit()
         input_bad = QLineEdit()
@@ -51,7 +72,6 @@ class OverlayWidget(QWidget):
         
         self.good_maps = QListWidget()
         self.bad_maps = QListWidget()
-        # 
 
         self.maps = init_db()
         
@@ -89,8 +109,11 @@ class OverlayWidget(QWidget):
                 self.bad_maps.addItem(item)
                 self.bad_maps.setItemWidget(item, item_widget)
 
-        layout.addWidget(self.good_maps, 0,0)
-        layout.addWidget(self.bad_maps, 0,1)
+        layout.addWidget(header_1, 0, 0)
+        layout.addWidget(header_2, 0, 1)
+
+        layout.addWidget(self.good_maps, 1, 0)
+        layout.addWidget(self.bad_maps, 1, 1)
         
         # Add Input Item To List To HBoxLayout
         input_layout_good.addWidget(input_good)
@@ -99,8 +122,8 @@ class OverlayWidget(QWidget):
         input_layout_bad.addWidget(submit_2)
         # 
         
-        layout.addLayout(input_layout_good, 1,0)
-        layout.addLayout(input_layout_bad, 1,1)
+        layout.addLayout(input_layout_good, 2, 0)
+        layout.addLayout(input_layout_bad, 2, 1)
 
         
         self.setLayout(layout)
@@ -148,6 +171,7 @@ class OverlayWidget(QWidget):
     def add_item_button(self, map, map_type):
         # Update the local database and add to real time list view
         add_to_json({map: map_type})
+        check_if_exists(map, map_type)
         if map_type == "Good":
             item = QListWidgetItem()
             item_widget = QWidget()
@@ -188,3 +212,9 @@ class OverlayWidget(QWidget):
         
     def keyPressEvent(self, event):
         pass
+    
+    def toggle_visibility(self):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show()
