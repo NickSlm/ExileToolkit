@@ -4,7 +4,7 @@ from PyQt5.QtGui import *
 from PyQt5 import QtGui
 from utils import get_window_info
 from pynput import keyboard
-from utils import add_to_json, init_db, remove_from_json, check_if_exists
+from utils import add_to_json, init_db, remove_from_json, check_if_exists, get_map_link
 import json
 
 class CustomDropMenu(QWidget):
@@ -25,10 +25,19 @@ class CustomDropMenu(QWidget):
         self.setLayout(layout)  # Set layout for this widget
     def get_selected_item(self):
         return self.combobox.currentText()
+    
 class CustomListItem(QWidget):
     def __init__(self, map, button_callback, parent=None):
         super().__init__()
-        self.line_text = QLabel(map, self)
+        
+        url = get_map_link(map)
+        
+        self.line_text = QLabel(self)
+        if url != "None":
+            self.line_text.setText(f'<a href="{url}" style="color: white; text-decoration: none;">{map}</a>')
+        else:
+            self.line_text.setText(map)
+        self.line_text.setOpenExternalLinks(True)
         self.line_push_button = QPushButton(self)
         self.line_push_button.setFixedSize(16,16)
         self.line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
@@ -37,7 +46,6 @@ class CustomListItem(QWidget):
         layout = QHBoxLayout(self)
         layout.addWidget(self.line_text)
         layout.addWidget(self.line_push_button)
-        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         self.line_push_button.clicked.connect(button_callback)

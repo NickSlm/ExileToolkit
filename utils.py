@@ -46,7 +46,16 @@ def remove_from_json(map):
     with open("maps.json", 'w') as file:
         json.dump(maps, file, indent = 4)
         
-        
+      
+def get_map_link(map):
+    with open("map_database.json") as file:
+        try:
+            maps = json.load(file)
+        except json.JSONDecodeError:
+            maps = {}
+            
+    link = maps[map]
+    return link
 # def create_database_of_maps(data):
 #     if not os.path.exists("map_database.json") or os.path.getsize("map_database.json") == 0:
 #         maps = {}
