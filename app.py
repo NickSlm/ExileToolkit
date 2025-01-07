@@ -26,6 +26,7 @@ def main():
         
         listener_thread = threading.Thread(target=listen_for_keypress, args=(overlay,))
         listener_thread.daemon = True
+        
         listener_thread.start()
         
         overlay.show()

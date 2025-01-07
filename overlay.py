@@ -7,6 +7,41 @@ from pynput import keyboard
 from utils import add_to_json, init_db, remove_from_json, check_if_exists
 import json
 
+class CustomDropMenu(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.combobox = QComboBox()
+        with open("map_database.json") as file:
+            try:
+                maps = json.load(file)
+            except json.JSONDecodeError:
+                maps = {}
+        
+        for map, link in maps.items():
+            self.combobox.addItem(map)
+    
+        layout = QVBoxLayout()
+        layout.addWidget(self.combobox)
+        self.setLayout(layout)  # Set layout for this widget
+    def get_selected_item(self):
+        return self.combobox.currentText()
+class CustomListItem(QWidget):
+    def __init__(self, map, button_callback, parent=None):
+        super().__init__()
+        self.line_text = QLabel(map, self)
+        self.line_push_button = QPushButton(self)
+        self.line_push_button.setFixedSize(16,16)
+        self.line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
+        self.line_push_button.setObjectName(map)
+        
+        layout = QHBoxLayout(self)
+        layout.addWidget(self.line_text)
+        layout.addWidget(self.line_push_button)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+        self.line_push_button.clicked.connect(button_callback)
+
 class OverlayWidget(QWidget):
     def __init__(self, window_info, hwnd):
         super().__init__()
@@ -52,160 +87,100 @@ class OverlayWidget(QWidget):
     def init_ui(self):
         layout = QGridLayout()
         self.setFixedSize(600,400)
-        input_layout_good = QHBoxLayout()
-        input_layout_bad = QHBoxLayout()
+        input_layout_1_0 = QHBoxLayout()
+        input_layout_1_1 = QHBoxLayout()
         
+        # Create List Headers
         header_1 = QLabel("Good Bosses")
         header_1.setAlignment(Qt.AlignCenter)
         header_1.setStyleSheet("font-size: 16px;")
         header_2 = QLabel("Bad Bosses")
         header_2.setStyleSheet("font-size: 16px;")
         header_2.setAlignment(Qt.AlignCenter)
+        # 
         
-        input_good = QLineEdit()
-        input_bad = QLineEdit()
-        
-        submit_1 = QPushButton("Submit")
-        submit_1.clicked.connect(lambda: self.add_item_button(input_good.text(), "Good"))
-        submit_2 = QPushButton("Submit")
-        submit_2.clicked.connect(lambda: self.add_item_button(input_bad.text(), "Bad"))
-        
+        layout.addWidget(header_1, 0, 0)
+        layout.addWidget(header_2, 0, 1)
+
         self.good_maps = QListWidget()
         self.bad_maps = QListWidget()
 
         self.maps = init_db()
-        
-        for map, label in self.maps.items():
-            if label == "Good":
-                item = QListWidgetItem()
-                item_widget = QWidget()
-                line_text = QLabel(map)
-                line_push_button = QPushButton()
-                line_push_button.setFixedSize(16,16)
-                line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
-                line_push_button.setObjectName(map)
-                line_push_button.clicked.connect(self.remove_good_button)
-                item_layout = QHBoxLayout()
-                item_layout.addWidget(line_text)
-                item_layout.addWidget(line_push_button)
-                item_widget.setLayout(item_layout)
-                item.setSizeHint(item_widget.sizeHint())
-                self.good_maps.addItem(item)
-                self.good_maps.setItemWidget(item, item_widget)
-            else:
-                item = QListWidgetItem()
-                item_widget = QWidget()
-                line_text = QLabel(map)
-                line_push_button = QPushButton()
-                line_push_button.setFixedSize(16,16)
-                line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
-                line_push_button.setObjectName(map)
-                line_push_button.clicked.connect(self.remove_bad_button)
-                item_layout = QHBoxLayout()
-                item_layout.addWidget(line_text)
-                item_layout.addWidget(line_push_button)
-                item_widget.setLayout(item_layout)
-                item.setSizeHint(item_widget.sizeHint())
-                self.bad_maps.addItem(item)
-                self.bad_maps.setItemWidget(item, item_widget)
-
-        layout.addWidget(header_1, 0, 0)
-        layout.addWidget(header_2, 0, 1)
 
         layout.addWidget(self.good_maps, 1, 0)
         layout.addWidget(self.bad_maps, 1, 1)
         
-        # Add Input Item To List To HBoxLayout
-        input_layout_good.addWidget(input_good)
-        input_layout_good.addWidget(submit_1)
-        input_layout_bad.addWidget(input_bad)
-        input_layout_bad.addWidget(submit_2)
+        # Add "Input Item To List" To HBoxLayout
+        combobox = CustomDropMenu()
+        submit_1 = QPushButton("Good")
+        submit_1.clicked.connect(lambda: self.add_item_button(combobox.get_selected_item(), "Good"))
+        submit_2 = QPushButton("Bad")
+        submit_2.clicked.connect(lambda: self.add_item_button(combobox.get_selected_item(), "Bad"))
+
+        input_layout_1_0.addWidget(combobox)
+        input_layout_1_1.addWidget(submit_1)
+        input_layout_1_1.addWidget(submit_2)
         # 
         
-        layout.addLayout(input_layout_good, 2, 0)
-        layout.addLayout(input_layout_bad, 2, 1)
+        layout.addLayout(input_layout_1_0, 2, 0)
+        layout.addLayout(input_layout_1_1, 2, 1)
 
         
         self.setLayout(layout)
 
-    def remove_good_button(self):
-        sender = self.sender()    
-        push_button = self.findChild(QPushButton, sender.objectName())
+
+        # Populate the Lists
+        for map, map_type in self.maps.items():
+            if map_type == "Good":
+                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                list_item = QListWidgetItem(self.good_maps)
+                list_item.setSizeHint(custom_widget.sizeHint())
+                self.good_maps.addItem(list_item)
+                self.good_maps.setItemWidget(list_item, custom_widget)
+            else:
+                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                list_item = QListWidgetItem(self.bad_maps)
+                list_item.setSizeHint(custom_widget.sizeHint())
+                self.bad_maps.addItem(list_item)
+                self.bad_maps.setItemWidget(list_item, custom_widget)
+
+    def remove_item(self, map, map_type):
+        sender = self.sender()
+        push_button = self.findChild(QPushButton, sender.objectName())  # Find the button using objectName
         
-        # Iterate over the items in the list and find the one that matches the objectName of the push button
-        for row in range(self.good_maps.count()):
-            item = self.good_maps.item(row)
-            widget = self.good_maps.itemWidget(item)
+        map_list = self.good_maps if map_type == "Good" else self.bad_maps
+        for row in range(map_list.count()):
+            item = map_list.item(row)  
+            widget = map_list.itemWidget(item)
             
             if widget:
-                button = widget.findChild(QPushButton)
+                button = widget.findChild(QPushButton)  
                 if button and button.objectName() == push_button.objectName():
-                    # Remove the item from the list
-                    self.good_maps.removeItemWidget(item)  # Remove the widget from the layout
-                    self.good_maps.takeItem(row)  # Remove the item from the list
-
-                    # Remove the associated data from the JSON
-                    remove_from_json(push_button.objectName())
-                    break
-
-    def remove_bad_button(self):
-        sender = self.sender()    
-        push_button = self.findChild(QPushButton, sender.objectName())
-        
-        # Iterate over the items in the list and find the one that matches the objectName of the push button
-        for row in range(self.bad_maps.count()):
-            item = self.bad_maps.item(row)
-            widget = self.bad_maps.itemWidget(item)
-            
-            if widget:
-                button = widget.findChild(QPushButton)
-                if button and button.objectName() == push_button.objectName():
-                    # Remove the item from the list
-                    self.bad_maps.removeItemWidget(item)  # Remove the widget from the layout
-                    self.bad_maps.takeItem(row)  # Remove the item from the list
-
-                    # Remove the associated data from the JSON
+                    map_list.removeItemWidget(item)
+                    map_list.takeItem(row)  
+                    
                     remove_from_json(push_button.objectName())
                     break
 
     def add_item_button(self, map, map_type):
         # Update the local database and add to real time list view
-        add_to_json({map: map_type})
-        check_if_exists(map, map_type)
-        if map_type == "Good":
-            item = QListWidgetItem()
-            item_widget = QWidget()
-            line_text = QLabel(map)
-            line_push_button = QPushButton()
-            line_push_button.setFixedSize(16,16)
-            line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
-            line_push_button.setObjectName(map)
-            line_push_button.clicked.connect(self.remove_good_button)
-            item_layout = QHBoxLayout()
-            item_layout.addWidget(line_text)
-            item_layout.addWidget(line_push_button)
-            item_widget.setLayout(item_layout)
-            item.setSizeHint(item_widget.sizeHint())
-            self.good_maps.addItem(item)
-            self.good_maps.setItemWidget(item, item_widget)
+        if check_if_exists(map, map_type):
+            print(f"map {map} already in, cunt")
         else:
-            item = QListWidgetItem()
-            item_widget = QWidget()
-            line_text = QLabel(map)
-            line_push_button = QPushButton()
-            line_push_button.setFixedSize(16,16)
-            line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
-            line_push_button.setObjectName(map)
-            line_push_button.clicked.connect(self.remove_bad_button)
-            item_layout = QHBoxLayout()
-            item_layout.addWidget(line_text)
-            item_layout.addWidget(line_push_button)
-            item_widget.setLayout(item_layout)
-            item.setSizeHint(item_widget.sizeHint())
-            self.bad_maps.addItem(item)
-            self.bad_maps.setItemWidget(item, item_widget)
-        
-        
+            add_to_json({map: map_type})
+            if map_type == "Good":
+                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                list_item = QListWidgetItem(self.good_maps)
+                list_item.setSizeHint(custom_widget.sizeHint())
+                self.good_maps.addItem(list_item)
+                self.good_maps.setItemWidget(list_item, custom_widget)
+            else:
+                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                list_item = QListWidgetItem(self.bad_maps)
+                list_item.setSizeHint(custom_widget.sizeHint())
+                self.bad_maps.addItem(list_item)
+                self.bad_maps.setItemWidget(list_item, custom_widget)
+                
     def update_position(self):
         info = get_window_info(self.target_hwnd)
         self.setGeometry(info.win_x, info.win_y, info.win_width, info.win_height)
