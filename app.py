@@ -11,6 +11,7 @@ def listen_for_keypress(app):
     def on_press(key):
         if key == keyboard.Key.f8:
             app.toggle_visibility()
+            
 
     with keyboard.Listener(on_press=on_press) as listener:
         listener.join()

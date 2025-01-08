@@ -34,6 +34,7 @@ class CustomListItem(QWidget):
         
         self.line_text = QLabel(self)
         if url != "None":
+            self.line_text.setToolTip(url.split("/")[-1])
             self.line_text.setText(f'<a href="{url}" style="color: white; text-decoration: none;">{map}</a>')
         else:
             self.line_text.setText(map)
@@ -99,10 +100,10 @@ class OverlayWidget(QWidget):
         input_layout_1_1 = QHBoxLayout()
         
         # Create List Headers
-        header_1 = QLabel("Good Bosses")
+        header_1 = QLabel("Good Map Bosses")
         header_1.setAlignment(Qt.AlignCenter)
         header_1.setStyleSheet("font-size: 16px;")
-        header_2 = QLabel("Bad Bosses")
+        header_2 = QLabel("Bad Map Bosses")
         header_2.setStyleSheet("font-size: 16px;")
         header_2.setAlignment(Qt.AlignCenter)
         # 
