@@ -11,7 +11,7 @@ class CustomDropMenu(QWidget):
     def __init__(self):
         super().__init__()
         self.combobox = QComboBox()
-        with open("map_database.json") as file:
+        with open("D:\PathOfExile2Overlay\data\map_database.json") as file:
             try:
                 maps = json.load(file)
             except json.JSONDecodeError:
@@ -41,7 +41,7 @@ class CustomListItem(QWidget):
         self.line_text.setOpenExternalLinks(True)
         self.line_push_button = QPushButton(self)
         self.line_push_button.setFixedSize(16,16)
-        self.line_push_button.setIcon(QtGui.QIcon("icons/square_14034319.png"))
+        self.line_push_button.setIcon(QtGui.QIcon("D:\PathOfExile2Overlay\icons\square_14034319.png"))
         self.line_push_button.setObjectName(map)
         
         layout = QHBoxLayout(self)
@@ -51,8 +51,8 @@ class CustomListItem(QWidget):
 
         self.line_push_button.clicked.connect(button_callback)
 
-class OverlayWidget(QWidget):
-    def __init__(self, window_info, hwnd):
+class OverlayWindow(QWidget):
+    def __init__(self, window_info, config, hwnd):
         super().__init__()
         self.target_hwnd = hwnd
         self.x = window_info.win_x
@@ -60,14 +60,12 @@ class OverlayWidget(QWidget):
         self.width = window_info.win_width
         self.height = window_info.win_height
         
-        self.setWindowTitle("test window")
         self.setGeometry(
             self.x,
             self.y,
             self.width,
             self.height
             )
-        
         self.setWindowFlags(Qt.Window|Qt.X11BypassWindowManagerHint|Qt.WindowStaysOnTopHint|Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet("""
@@ -88,7 +86,6 @@ class OverlayWidget(QWidget):
         
         self.update_position()
         self.init_ui()
-        
         timer = QTimer(self)
         timer.timeout.connect(self.update_position)
         timer.start(100)

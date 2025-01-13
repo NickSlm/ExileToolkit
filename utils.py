@@ -2,6 +2,8 @@ import win32gui
 from dataclass import WindowInfo
 import json
 import os
+import sys
+
 
 def get_window_info(hwnd):
     window_info = WindowInfo()
@@ -11,51 +13,53 @@ def get_window_info(hwnd):
     window_info.win_width = right - left
     window_info.win_height = bottom - top
 
-
     left, top, right, bottom = win32gui.GetClientRect(hwnd)
     window_info.client_width = right - left
     window_info.client_height = bottom - top
     return window_info
 
-def init_db():
-    if not os.path.exists("maps.json") or os.path.getsize("maps.json") == 0:
-        maps = {}
-    else:
-        with open("maps.json") as file:
+class MapsDatabase:
+    def __init__(self, config):
+        self.config = config
+        self.maps_path = self.config["maps_path"]
+        self.database_path = self.config["database_path"]
+        self.maps = {}
+        
+        self.init_db()
+            
+    def init_db(self):
+        with open(self.maps_path, 'r') as file:
+            try:
+                self.maps = json.load(file)
+            except json.JSONDecodeError as e:
+                raise RuntimeError(f"Error Loading Configuration File:{e}")
+
+    def add(self, new_map):
+        self.maps.update(new_map)
+        with open(self.maps_path, 'w') as file:
+            json.dump(self.maps, file, indent=4)
+            
+    def remove(self, map):
+        self.maps.pop(map)
+        with open(self.maps_path, 'w') as file:
+            json.dump(self.maps, file, indent=4)
+    
+    def get(self, map):
+        with open(self.database_path) as file:
             try:
                 maps = json.load(file)
-            except json.JSONDecodeError:
-                maps = {}
-    return maps
+            except json.JSONDecodeError as e:
+                raise RuntimeError(f"Error Loading Database File:{e}")
+        link = maps[map]
+        return link
 
-def check_if_exists(map, map_type):
-    maps = init_db()
-    if map in maps.keys():
-        return True
-
-def add_to_json(new_data):
-    maps = init_db()  
-    maps.update(new_data)
-    # update the json with the updated dict
-    with open("maps.json", 'w') as file:    
-        json.dump(maps, file, indent = 4)
-
-def remove_from_json(map):
-    maps = init_db()
-    maps.pop(map)
-    with open("maps.json", 'w') as file:
-        json.dump(maps, file, indent = 4)
+    def exist(self, map):
+        if map in self.maps.keys():
+            return True
+        else:
+            return False
         
-      
-def get_map_link(map):
-    with open("map_database.json") as file:
-        try:
-            maps = json.load(file)
-        except json.JSONDecodeError:
-            maps = {}
-            
-    link = maps[map]
-    return link
+        
 # def create_database_of_maps(data):
 #     if not os.path.exists("map_database.json") or os.path.getsize("map_database.json") == 0:
 #         maps = {}
@@ -68,8 +72,6 @@ def get_map_link(map):
 #     maps.update(data)
 #     with open("map_database.json","w") as file:
 #         json.dump(maps, file, indent=4)
-
-
 
 # data = {
 #     "Abyss": "https://www.poe2wiki.net/wiki/Zar_Wali,_the_Bone_Tyrant",
@@ -125,3 +127,5 @@ def get_map_link(map):
 #     "Woodland":"https://www.poe2wiki.net/wiki/Tierney,_the_Hateful"
 # }
 # create_database_of_maps(data)
+
+

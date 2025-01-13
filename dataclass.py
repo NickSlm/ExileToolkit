@@ -6,3 +6,4 @@ class WindowInfo():
         self.win_height = 0
         self.client_width = 0
         self.client_height = 0
+                
