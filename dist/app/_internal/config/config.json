@@ -1,0 +1,10 @@
+{
+    "database_path": "D:\\PathOfExile2Overlay\\dist\\app\\_internal\\data\\map_database.json",
+    "maps_path": "D:\\PathOfExile2Overlay\\dist\\app\\_internal\\data\\maps.json",
+    "assets_path": "D:\\PathOfExile2Overlay\\dist\\app\\_internal\\assets\\icons",
+    "icons": {
+        "delete": "delete.png",
+        "tray": "trayIcon.png",
+        "note": "notes.png"
+    }
+}

@@ -1,17 +1,17 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import *
 from PyQt5 import QtGui
 from utils import get_window_info
 from pynput import keyboard
-from utils import add_to_json, init_db, remove_from_json, check_if_exists, get_map_link
 import json
+import os
 
 class CustomDropMenu(QWidget):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
         self.combobox = QComboBox()
-        with open("D:\PathOfExile2Overlay\data\map_database.json") as file:
+        with open(config.config["database_path"]) as file:
             try:
                 maps = json.load(file)
             except json.JSONDecodeError:
@@ -27,10 +27,8 @@ class CustomDropMenu(QWidget):
         return self.combobox.currentText()
     
 class CustomListItem(QWidget):
-    def __init__(self, map, button_callback, parent=None):
+    def __init__(self, map, url, config, button_callback, parent=None):
         super().__init__()
-        
-        url = get_map_link(map)
         
         self.line_text = QLabel(self)
         if url != "None":
@@ -41,25 +39,39 @@ class CustomListItem(QWidget):
         self.line_text.setOpenExternalLinks(True)
         self.line_push_button = QPushButton(self)
         self.line_push_button.setFixedSize(16,16)
-        self.line_push_button.setIcon(QtGui.QIcon("D:\PathOfExile2Overlay\icons\square_14034319.png"))
+        self.line_push_button.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["delete"])))
         self.line_push_button.setObjectName(map)
+        
+        self.notes_push_button = QPushButton(self)
+        self.notes_push_button.setFixedSize(16,16)
+        self.notes_push_button.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["note"])))
+        self.notes_push_button.setObjectName("<objectName>")
+        
         
         layout = QHBoxLayout(self)
         layout.addWidget(self.line_text)
+        layout.addWidget(self.notes_push_button)
         layout.addWidget(self.line_push_button)
         self.setLayout(layout)
 
         self.line_push_button.clicked.connect(button_callback)
 
 class OverlayWindow(QWidget):
-    def __init__(self, window_info, config, hwnd):
+    toggle_signal = pyqtSignal()
+    def __init__(self, window_info, database, config, hwnd):
         super().__init__()
-        self.target_hwnd = hwnd
+        
+        self.toggle_signal.connect(self.toggle_visibility)
+        
         self.x = window_info.win_x
         self.y = window_info.win_y
         self.width = window_info.win_width
         self.height = window_info.win_height
         
+        self.database = database
+        self.config = config
+        
+        self.target_hwnd = hwnd
         self.setGeometry(
             self.x,
             self.y,
@@ -111,13 +123,13 @@ class OverlayWindow(QWidget):
         self.good_maps = QListWidget()
         self.bad_maps = QListWidget()
 
-        self.maps = init_db()
+        self.maps = self.database.maps
 
         layout.addWidget(self.good_maps, 1, 0)
         layout.addWidget(self.bad_maps, 1, 1)
         
         # Add "Input Item To List" To HBoxLayout
-        combobox = CustomDropMenu()
+        combobox = CustomDropMenu(self.config)
         submit_1 = QPushButton("Good")
         submit_1.clicked.connect(lambda: self.add_item_button(combobox.get_selected_item(), "Good"))
         submit_2 = QPushButton("Bad")
@@ -138,13 +150,13 @@ class OverlayWindow(QWidget):
         # Populate the Lists
         for map, map_type in self.maps.items():
             if map_type == "Good":
-                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
                 list_item = QListWidgetItem(self.good_maps)
                 list_item.setSizeHint(custom_widget.sizeHint())
                 self.good_maps.addItem(list_item)
                 self.good_maps.setItemWidget(list_item, custom_widget)
             else:
-                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
                 list_item = QListWidgetItem(self.bad_maps)
                 list_item.setSizeHint(custom_widget.sizeHint())
                 self.bad_maps.addItem(list_item)
@@ -165,23 +177,23 @@ class OverlayWindow(QWidget):
                     map_list.removeItemWidget(item)
                     map_list.takeItem(row)  
                     
-                    remove_from_json(push_button.objectName())
+                    self.database.remove(push_button.objectName())
                     break
 
     def add_item_button(self, map, map_type):
         # Update the local database and add to real time list view
-        if check_if_exists(map, map_type):
-            print(f"map {map} already in, cunt")
+        if self.database.exist(map):
+            print("map in cunt")
         else:
-            add_to_json({map: map_type})
+            self.database.add({map: map_type})
             if map_type == "Good":
-                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
                 list_item = QListWidgetItem(self.good_maps)
                 list_item.setSizeHint(custom_widget.sizeHint())
                 self.good_maps.addItem(list_item)
                 self.good_maps.setItemWidget(list_item, custom_widget)
             else:
-                custom_widget = CustomListItem(map, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
+                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
                 list_item = QListWidgetItem(self.bad_maps)
                 list_item.setSizeHint(custom_widget.sizeHint())
                 self.bad_maps.addItem(list_item)
@@ -199,3 +211,4 @@ class OverlayWindow(QWidget):
             self.hide()
         else:
             self.show()
+            

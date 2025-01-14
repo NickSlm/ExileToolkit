@@ -15,8 +15,7 @@ from utils import MapsDatabase
 def listen_for_keypress(app):
     def on_press(key):
         if key == keyboard.Key.f8:
-            app.toggle_visibility()
-
+            app.toggle_signal.emit()
     with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
 
@@ -26,30 +25,32 @@ def application_exit():
 def application_settings():
     pass
 
-
 def get_exe_path():
     if hasattr(sys, "_MEIPASS"):
-        return os.path.dirname(sys.executable)
+        base_path = sys._MEIPASS
+        if "_internal" in base_path:
+            return base_path
     else:
         return os.path.dirname(__file__)   
+    
     
 def main():
     hwnd = win32gui.FindWindow(None, "Microsoft Whiteboard")
     if hwnd == 0:
         print("Application is not running")
     else:
-        WINDOW_INFO = get_window_info(hwnd=hwnd)
+        window_info = get_window_info(hwnd=hwnd)
+        
         # Load Configuration File
         dir_path = get_exe_path()
         config = Config(dir_path)
         config.load()
-
         # Create Database
         maps_database = MapsDatabase(config)
         
         app = QtWidgets.QApplication(sys.argv)
         tray_icon = QSystemTrayIcon()
-        tray_icon.setIcon(QtGui.QIcon("D:\PathOfExile2Overlay\icons\poo_720914.png"))
+        tray_icon.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["tray"])))
         
         menu = QMenu()
         
@@ -62,16 +63,14 @@ def main():
         menu.addAction(exit_action)
 
         tray_icon.setContextMenu(menu)
-        overlay = OverlayWindow(WINDOW_INFO ,hwnd)
+        overlay = OverlayWindow(window_info, maps_database, config ,hwnd)
         settings = SettingsWindow()
         
         listener_thread = threading.Thread(target=listen_for_keypress, args=(overlay,))
         listener_thread.daemon = True
-        
         listener_thread.start()
         
         tray_icon.show()
-        overlay.show()
         settings.show()
         sys.exit(app.exec_())
     

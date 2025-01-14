@@ -21,8 +21,8 @@ def get_window_info(hwnd):
 class MapsDatabase:
     def __init__(self, config):
         self.config = config
-        self.maps_path = self.config["maps_path"]
-        self.database_path = self.config["database_path"]
+        self.maps_path = self.config.config["maps_path"]
+        self.database_path = self.config.config["database_path"]
         self.maps = {}
         
         self.init_db()

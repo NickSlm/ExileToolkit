@@ -20,3 +20,4 @@ class SettingsWindow(QDialog):
         layout.addWidget(label2,0,1)
         layout.addWidget(btns,1,0)
         self.setLayout(layout)
+        

@@ -1,4 +1,10 @@
 {
-    "database_path": "",
-    "maps_path": ""
+    "database_path": "data\\map_database.json",
+    "maps_path": "data\\maps.json",
+    "assets_path": "assets\\icons",
+    "icons": {
+        "delete": "delete.png",
+        "tray": "trayIcon.png",
+        "note": "notes.png"
+    }
 }
