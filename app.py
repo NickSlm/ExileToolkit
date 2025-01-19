@@ -1,6 +1,7 @@
 from utils import get_window_info
 from PyQt5 import QtWidgets,QtGui
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QThread, pyqtSignal
 import win32gui
 import sys
 import os
@@ -12,18 +13,26 @@ from config import Config
 from utils import MapsDatabase
 
 
-def listen_for_keypress(app):
-    def on_press(key):
-        if key == keyboard.Key.f8:
-            app.toggle_signal.emit()
-    with keyboard.Listener(on_press=on_press) as listener:
-        listener.join()
+def on_key_press(key, keybinds, handlers):
+    for action, keybind in keybinds.items():
+        if key == keybind:
+            handler = handlers.get(action)
+            if handler:
+                handler()
+            return
+
+def load_keybinds(config):
+    keybinds = {}
+    for action, keybind in config.config["keybinds"].items():
+        try:
+            if hasattr(keyboard.Key, keybind):
+                keybinds[action] = keybind
+        except ArithmeticError:
+            raise ValueError(f"Invalid keybind: {keybind}")
+    return keybinds
 
 def application_exit():
     QApplication.instance().quit()
-    
-def application_settings():
-    pass
 
 def get_exe_path():
     if hasattr(sys, "_MEIPASS"):
@@ -33,7 +42,29 @@ def get_exe_path():
     else:
         return os.path.dirname(__file__)   
     
+class KeyListenerThread(QThread):
+    key_pressed = pyqtSignal(str)
+    def __init__(self, keybinds, handlers):
+        super().__init__()
+        self.keybinds = keybinds
+        self.handlers = handlers
     
+    def run(self):
+        with keyboard.Listener(on_press=self.on_press) as listener:
+            listener.join()
+            
+    def on_press(self, key):
+        try:
+            if isinstance(key, keyboard.KeyCode) and key.char is not None:
+                key_name = key.char if hasattr(key, 'char') else str(key)
+            elif isinstance(key, keyboard.Key):
+                key_name = key.name
+            else:
+                key_name = str(key)
+            self.key_pressed.emit(key_name)
+        except Exception as e:
+            print(f"Error handling key press: {e}")
+
 def main():
     hwnd = win32gui.FindWindow(None, "Microsoft Whiteboard")
     if hwnd == 0:
@@ -45,6 +76,7 @@ def main():
         dir_path = get_exe_path()
         config = Config(dir_path)
         config.load()
+        
         # Create Database
         maps_database = MapsDatabase(config)
         
@@ -53,25 +85,28 @@ def main():
         tray_icon.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["tray"])))
         
         menu = QMenu()
-        
+        settings = SettingsWindow()
         settings_action = QAction("Settings")
-        settings_action.triggered.connect(application_settings)
+        settings_action.triggered.connect(settings.appear)
         exit_action = QAction("Exit")
         exit_action.triggered.connect(application_exit)
         
         menu.addAction(settings_action)
         menu.addAction(exit_action)
+        
 
         tray_icon.setContextMenu(menu)
         overlay = OverlayWindow(window_info, maps_database, config ,hwnd)
-        settings = SettingsWindow()
         
-        listener_thread = threading.Thread(target=listen_for_keypress, args=(overlay,))
-        listener_thread.daemon = True
+        keybinds = load_keybinds(config)
+        handlers = {"settings":settings.appear,
+                    "overlay": overlay.toggle_visibility}
+        
+        listener_thread = KeyListenerThread(keybinds, handlers)
+        listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, keybinds, handlers))
         listener_thread.start()
         
         tray_icon.show()
-        settings.show()
         sys.exit(app.exec_())
     
 if __name__ == "__main__":

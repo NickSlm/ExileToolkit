@@ -112,6 +112,7 @@ class OverlayWindow(QWidget):
         header_1 = QLabel("Good Map Bosses")
         header_1.setAlignment(Qt.AlignCenter)
         header_1.setStyleSheet("font-size: 16px;")
+        
         header_2 = QLabel("Bad Map Bosses")
         header_2.setStyleSheet("font-size: 16px;")
         header_2.setAlignment(Qt.AlignCenter)
@@ -138,7 +139,7 @@ class OverlayWindow(QWidget):
         input_layout_1_0.addWidget(combobox)
         input_layout_1_1.addWidget(submit_1)
         input_layout_1_1.addWidget(submit_2)
-        # 
+
         
         layout.addLayout(input_layout_1_0, 2, 0)
         layout.addLayout(input_layout_1_1, 2, 1)
@@ -183,7 +184,7 @@ class OverlayWindow(QWidget):
     def add_item_button(self, map, map_type):
         # Update the local database and add to real time list view
         if self.database.exist(map):
-            print("map in cunt")
+            print("map in, cunt")
         else:
             self.database.add({map: map_type})
             if map_type == "Good":

@@ -6,5 +6,9 @@
         "delete": "delete.png",
         "tray": "trayIcon.png",
         "note": "notes.png"
+    },
+    "keybinds": {
+        "overlay": "f6",
+        "settings": "f7"
     }
 }

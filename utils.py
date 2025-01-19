@@ -127,5 +127,3 @@ class MapsDatabase:
 #     "Woodland":"https://www.poe2wiki.net/wiki/Tierney,_the_Hateful"
 # }
 # create_database_of_maps(data)
-
-
