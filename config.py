@@ -9,8 +9,6 @@ class Config:
         self.file_name = os.path.join(self.dir_path, file_path)
         with open(self.file_name, "r") as file:
             self.config = json.load(file)
-            
-        
         self.init_config()
     
     def init_config(self):
@@ -24,11 +22,16 @@ class Config:
         with open(self.file_name, 'w') as file:
             json.dump(self.config, file, indent=4)
     
-    def load(self):
+    def reload(self):
         with open(self.file_name, 'r') as file:
             self.config = json.load(file)
     
     def get(self, key):
         return self.config[key]
     
-
+    def update(self, new_data):
+        with open(self.file_name, 'r') as file:
+            config = json.load(file)
+        config.update(new_data)
+        with open(self.file_name, 'w') as file:
+            json.dump(config, file, indent=4)

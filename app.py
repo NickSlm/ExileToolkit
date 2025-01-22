@@ -12,24 +12,14 @@ from settings import SettingsWindow
 from config import Config
 from utils import MapsDatabase
 
-
-def on_key_press(key, keybinds, handlers):
+def on_key_press(key, config, handlers):
+    keybinds = load_keybinds(config)
     for action, keybind in keybinds.items():
         if key == keybind:
             handler = handlers.get(action)
             if handler:
                 handler()
             return
-
-def load_keybinds(config):
-    keybinds = {}
-    for action, keybind in config.config["keybinds"].items():
-        try:
-            if hasattr(keyboard.Key, keybind):
-                keybinds[action] = keybind
-        except ArithmeticError:
-            raise ValueError(f"Invalid keybind: {keybind}")
-    return keybinds
 
 def application_exit():
     QApplication.instance().quit()
@@ -42,11 +32,23 @@ def get_exe_path():
     else:
         return os.path.dirname(__file__)   
     
+def load_keybinds(config):
+    # Reload the config file for changes that might accured
+    config.reload()
+    # 
+    keybinds = {}
+    for action, keybind in config.config["keybinds"].items():
+        try:
+            if hasattr(keyboard.Key, keybind):
+                keybinds[action] = keybind
+        except ArithmeticError:
+            raise ValueError(f"Invalid keybind: {keybind}")
+    return keybinds
+
 class KeyListenerThread(QThread):
     key_pressed = pyqtSignal(str)
-    def __init__(self, keybinds, handlers):
+    def __init__(self, handlers):
         super().__init__()
-        self.keybinds = keybinds
         self.handlers = handlers
     
     def run(self):
@@ -75,17 +77,16 @@ def main():
         # Load Configuration File
         dir_path = get_exe_path()
         config = Config(dir_path)
-        config.load()
         
         # Create Database
         maps_database = MapsDatabase(config)
         
-        app = QtWidgets.QApplication(sys.argv)
+        app = QApplication(sys.argv)
         tray_icon = QSystemTrayIcon()
         tray_icon.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["tray"])))
         
         menu = QMenu()
-        settings = SettingsWindow()
+        settings = SettingsWindow(config)
         settings_action = QAction("Settings")
         settings_action.triggered.connect(settings.appear)
         exit_action = QAction("Exit")
@@ -98,13 +99,14 @@ def main():
         tray_icon.setContextMenu(menu)
         overlay = OverlayWindow(window_info, maps_database, config ,hwnd)
         
-        keybinds = load_keybinds(config)
         handlers = {"settings":settings.appear,
                     "overlay": overlay.toggle_visibility}
         
-        listener_thread = KeyListenerThread(keybinds, handlers)
-        listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, keybinds, handlers))
+        listener_thread = KeyListenerThread(handlers)
+        listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, config, handlers))
+        
         listener_thread.start()
+        
         
         tray_icon.show()
         sys.exit(app.exec_())

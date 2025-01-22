@@ -9,6 +9,7 @@
     },
     "keybinds": {
         "overlay": "f6",
-        "settings": "f7"
+        "settings": "f8",
+        "hover": ""
     }
 }
