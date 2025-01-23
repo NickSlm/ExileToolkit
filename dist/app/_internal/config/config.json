@@ -1,7 +1,7 @@
 {
-    "database_path": "D:\\PathOfExile2Overlay\\dist\\app\\_internal\\data\\map_database.json",
-    "maps_path": "D:\\PathOfExile2Overlay\\dist\\app\\_internal\\data\\maps.json",
-    "assets_path": "D:\\PathOfExile2Overlay\\dist\\app\\_internal\\assets\\icons",
+    "database_path": "data\\map_database.json",
+    "maps_path": "data\\maps.json",
+    "assets_path": "assets\\icons",
     "icons": {
         "delete": "delete.png",
         "tray": "trayIcon.png",
@@ -9,7 +9,7 @@
     },
     "keybinds": {
         "overlay": "f6",
-        "settings": "f8",
+        "settings": "f7",
         "hover": ""
     }
 }

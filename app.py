@@ -68,7 +68,7 @@ class KeyListenerThread(QThread):
             print(f"Error handling key press: {e}")
 
 def main():
-    hwnd = win32gui.FindWindow(None, "Microsoft Whiteboard")
+    hwnd = win32gui.FindWindow(None, "Path Of Exile 2")
     if hwnd == 0:
         print("Application is not running")
     else:

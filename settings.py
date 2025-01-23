@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer,pyqtSignal
 from PyQt5.QtGui import *
 from PyQt5 import QtGui
+from pathlib import Path
 import json
 
 class SettingsWindow(QDialog):
@@ -20,10 +21,8 @@ class SettingsWindow(QDialog):
         
         self.tabs = QTabWidget()
         keybind_tab = self.keybind_tab()
-        self.path_tab = QWidget()
         
         self.tabs.addTab(keybind_tab, "Keybinds")
-        self.tabs.addTab(self.path_tab, "Directories")
     
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
@@ -65,21 +64,19 @@ class SettingsWindow(QDialog):
         tab.layout.addWidget(self.btn_clear_2, 1,2)
         tab.layout.addWidget(self.btn_clear_3, 2,2)
         
-        self.btn_save = QPushButton("Save")
-        self.btn_cancel = QPushButton("Cancel")
+        btn_save = QPushButton("Save")
+        btn_cancel = QPushButton("Cancel")
         
-        self.btn_save.clicked.connect(self.submit_form)
-        self.btn_cancel.clicked.connect(self.hide)
+
         
-        tab.layout.addWidget(self.btn_save, 3, 0)
-        tab.layout.addWidget(self.btn_cancel, 3, 1)
+        btn_save.clicked.connect(self.submit_form)
+        btn_cancel.clicked.connect(self.hide)
+        
+        tab.layout.addWidget(btn_save, 3, 0)
+        tab.layout.addWidget(btn_cancel, 3, 1)
 
         tab.setLayout(tab.layout)
         return tab
-    
-    def path_tab(self):
-        pass
-        
         
     def submit_form(self):
         keybinds = {
