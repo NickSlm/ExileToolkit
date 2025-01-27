@@ -7,7 +7,7 @@ import sys
 import os
 import threading
 from pynput import keyboard
-from overlay import OverlayWindow
+from overlay import OverlayWindow, TooltipApp
 from settings import SettingsWindow
 from config import Config
 from utils import MapsDatabase
@@ -18,7 +18,11 @@ def on_key_press(key, config, handlers):
         if key == keybind:
             handler = handlers.get(action)
             if handler:
-                handler()
+                if hasattr(handler, "__func__"):
+                    if handler.__func__.__name__ == "show_tooltip":
+                        handler(text="ape")
+                    else:
+                        handler()  
             return
 
 def application_exit():
@@ -35,7 +39,7 @@ def get_exe_path():
 def load_keybinds(config):
     # Reload the config file for changes that might accured
     config.reload()
-    # 
+    
     keybinds = {}
     for action, keybind in config.config["keybinds"].items():
         try:
@@ -68,9 +72,9 @@ class KeyListenerThread(QThread):
             print(f"Error handling key press: {e}")
 
 def main():
-    hwnd = win32gui.FindWindow(None, "Path Of Exile 2")
+    hwnd = win32gui.FindWindow(None, "Microsoft Whiteboard")
     if hwnd == 0:
-        print("Application is not running")
+        raise RuntimeError("Application 'Path Of Exile 2' is not running. Exiting.")
     else:
         window_info = get_window_info(hwnd=hwnd)
         
@@ -98,13 +102,14 @@ def main():
 
         tray_icon.setContextMenu(menu)
         overlay = OverlayWindow(window_info, maps_database, config ,hwnd)
+        tooltip = TooltipApp()
         
         handlers = {"settings":settings.appear,
-                    "overlay": overlay.toggle_visibility}
+                    "overlay": overlay.toggle_visibility,
+                    "hover": tooltip.show_tooltip}
         
         listener_thread = KeyListenerThread(handlers)
         listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, config, handlers))
-        
         listener_thread.start()
         
         

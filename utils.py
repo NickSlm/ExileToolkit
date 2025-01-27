@@ -4,7 +4,6 @@ import json
 import os
 import sys
 
-
 def get_window_info(hwnd):
     window_info = WindowInfo()
     left, top, right, bottom = win32gui.GetWindowRect(hwnd)
@@ -59,8 +58,7 @@ class MapsDatabase:
         else:
             return False
         
-        
-# def create_database_of_maps(data):
+# def create_maps_database(data):
 #     if not os.path.exists("map_database.json") or os.path.getsize("map_database.json") == 0:
 #         maps = {}
 #     else:
@@ -126,4 +124,3 @@ class MapsDatabase:
 #     "Willow":"https://www.poe2wiki.net/wiki/Connal,_the_Tormented",
 #     "Woodland":"https://www.poe2wiki.net/wiki/Tierney,_the_Hateful"
 # }
-# create_database_of_maps(data)

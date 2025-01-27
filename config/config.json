@@ -10,6 +10,6 @@
     "keybinds": {
         "overlay": "f6",
         "settings": "f7",
-        "hover": ""
+        "hover": "f8"
     }
 }

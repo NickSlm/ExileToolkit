@@ -100,7 +100,7 @@ class OverlayWindow(QWidget):
         self.init_ui()
         timer = QTimer(self)
         timer.timeout.connect(self.update_position)
-        timer.start(100)
+        timer.start(16)
     
     def init_ui(self):
         layout = QGridLayout()
@@ -213,3 +213,35 @@ class OverlayWindow(QWidget):
         else:
             self.show()
             
+            
+class TooltipApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.ToolTip)
+        self.label = QLabel("", self)
+        
+        position = QCursor.pos()
+        
+        self.label.setText(f"{position.x(), position.y()}")
+        self.label.adjustSize()
+        self.resize(self.label.size())
+        self.move(position.x(), position.y() - 10) 
+        self.show()
+        
+        self.update_position()
+        
+        timer = QTimer(self)
+        timer.timeout.connect(self.update_position)
+        timer.start(16)
+        
+    def show_tooltip(self, text, position=None):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show()
+
+    def update_position(self):
+        position = QCursor.pos()
+        self.move(position.x(), position.y() - 10) 
+        self.label.setText(f"{position.x(), position.y()}")
+        
