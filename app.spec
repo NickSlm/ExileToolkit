@@ -4,8 +4,8 @@
 a = Analysis(
     ['app.py'],
     pathex=[],
-    binaries=[],
-    datas=[('data', 'data'), ('config', 'config'), ('assets', 'assets')],
+    binaries=[('C:\\Program Files\\Tesseract-OCR\\tesseract.exe', 'tesseract.exe')],
+    datas=[('config', 'config'), ('data', 'data'), ('assets', 'assets'), ('C:\\Program Files\\Tesseract-OCR\\tessdata', 'tessdata')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

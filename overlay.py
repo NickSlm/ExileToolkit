@@ -4,6 +4,9 @@ from PyQt5.QtGui import *
 from PyQt5 import QtGui
 from utils import get_window_info
 from pynput import keyboard
+from pytesseract import pytesseract
+import numpy as np
+from PIL import ImageGrab
 import json
 import os
 
@@ -36,21 +39,16 @@ class CustomListItem(QWidget):
             self.line_text.setText(f'<a href="{url}" style="color: white; text-decoration: none;">{map}</a>')
         else:
             self.line_text.setText(map)
+            
         self.line_text.setOpenExternalLinks(True)
         self.line_push_button = QPushButton(self)
         self.line_push_button.setFixedSize(16,16)
         self.line_push_button.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["delete"])))
         self.line_push_button.setObjectName(map)
-        
-        self.notes_push_button = QPushButton(self)
-        self.notes_push_button.setFixedSize(16,16)
-        self.notes_push_button.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["note"])))
-        self.notes_push_button.setObjectName("<objectName>")
-        
+                
         
         layout = QHBoxLayout(self)
         layout.addWidget(self.line_text)
-        layout.addWidget(self.notes_push_button)
         layout.addWidget(self.line_push_button)
         self.setLayout(layout)
 
@@ -212,21 +210,24 @@ class OverlayWindow(QWidget):
             self.hide()
         else:
             self.show()
-            
-            
+                  
 class TooltipApp(QWidget):
-    def __init__(self):
+    pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    def __init__(self, database, config):
         super().__init__()
-        self.setWindowFlags(Qt.ToolTip)
+        self.database = database
+        self.config = config
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.NoDropShadowWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
         self.label = QLabel("", self)
-        
+        self.label.setStyleSheet("background: transparent; color: white; font-size: 14px;")
         position = QCursor.pos()
         
         self.label.setText(f"{position.x(), position.y()}")
         self.label.adjustSize()
-        self.resize(self.label.size())
-        self.move(position.x(), position.y() - 10) 
-        self.show()
+        self.label.resize(self.label.sizeHint())
+        self.move(position.x() + 10, position.y() - 10) 
         
         self.update_position()
         
@@ -234,14 +235,22 @@ class TooltipApp(QWidget):
         timer.timeout.connect(self.update_position)
         timer.start(16)
         
-    def show_tooltip(self, text, position=None):
+    def show_tooltip(self, position=None):
         if self.isVisible():
             self.hide()
         else:
+            position = QCursor.pos()
+            left ,top = position.x(), position.y()
+            image = ImageGrab.grab(bbox=(left - 128, top - 24, left + 128, top + 24))
+            map = pytesseract.image_to_string(image)
+            map_type = self.database.get_map_type(map.lower())
+            self.label.setText(map_type)
+            self.label.adjustSize()
+            self.label.resize(self.label.sizeHint())
             self.show()
+
 
     def update_position(self):
         position = QCursor.pos()
-        self.move(position.x(), position.y() - 10) 
-        self.label.setText(f"{position.x(), position.y()}")
-        
+        self.move(position.x() + 10, position.y() - 10)
+                 
