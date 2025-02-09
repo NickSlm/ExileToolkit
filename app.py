@@ -109,7 +109,6 @@ class KeyListenerThread(QThread):
         pressed_modifiers = self.pressed_keys.intersection(self.modifiers)
         modifiers_str = '+'.join(pressed_modifiers) if pressed_modifiers else ''
         if pressed_modifiers and key_name not in pressed_modifiers:
-            print(f'{modifiers_str}+{key_name}')
             self.key_pressed.emit(f'{modifiers_str}+{key_name}')
         else:
             self.key_pressed.emit(key_name)
@@ -121,7 +120,7 @@ class KeyListenerThread(QThread):
             self.pressed_keys.discard(key_name)
 
 def main():
-    hwnd = win32gui.FindWindow(None, "Microsoft Whiteboard")
+    hwnd = win32gui.FindWindow(None, "Path of Exile 2")
     if hwnd == 0:
         raise RuntimeError("Application 'Path Of Exile 2' is not running. Exiting.")
     else:
