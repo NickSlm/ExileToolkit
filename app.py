@@ -88,7 +88,6 @@ class KeyListenerThread(QThread):
         self.pressed_keys = set()
         self.modifiers = {"ctrl_l", "shift", "alt_l"}
 
-    
     def run(self):
         with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
             listener.join()
@@ -108,9 +107,10 @@ class KeyListenerThread(QThread):
             self.pressed_keys.add(key_name)
             
         pressed_modifiers = self.pressed_keys.intersection(self.modifiers)
-        
+        modifiers_str = '+'.join(pressed_modifiers) if pressed_modifiers else ''
         if pressed_modifiers and key_name not in pressed_modifiers:
-            self.key_pressed.emit(f'ctrl+{key_name}')
+            print(f'{modifiers_str}+{key_name}')
+            self.key_pressed.emit(f'{modifiers_str}+{key_name}')
         else:
             self.key_pressed.emit(key_name)
 

@@ -38,15 +38,14 @@ class CustomListItem(QWidget):
             self.line_text.setToolTip(url.split("/")[-1])
             self.line_text.setText(f'<a href="{url}" style="color: white; text-decoration: none;">{map}</a>')
         else:
-            self.line_text.setText(map)
-            
+            self.line_text.setText(map)    
         self.line_text.setOpenExternalLinks(True)
+        
         self.line_push_button = QPushButton(self)
         self.line_push_button.setFixedSize(16,16)
         self.line_push_button.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["delete"])))
         self.line_push_button.setObjectName(map)
                 
-        
         layout = QHBoxLayout(self)
         layout.addWidget(self.line_text)
         layout.addWidget(self.line_push_button)
@@ -248,7 +247,6 @@ class TooltipApp(QWidget):
             self.label.adjustSize()
             self.label.resize(self.label.sizeHint())
             self.show()
-
 
     def update_position(self):
         position = QCursor.pos()

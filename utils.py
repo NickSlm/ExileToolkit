@@ -18,6 +18,11 @@ def get_window_info(hwnd):
     window_info.client_height = bottom - top
     return window_info
 
+
+def multi_replace_regex(text, replacements):
+    pattern = "|".join(map(re.escape, replacements.keys()))
+    return re.sub(pattern, lambda m: replacements[m.group()], text)
+
 class MapsDatabase:
     def __init__(self, config):
         self.config = config
@@ -66,3 +71,4 @@ class MapsDatabase:
             return self.maps[map]
         else:
             return "NO SUCH MAP"
+        
