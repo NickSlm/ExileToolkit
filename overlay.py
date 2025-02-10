@@ -2,13 +2,14 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import *
 from PyQt5 import QtGui
-from utils import get_window_info
 from pynput import keyboard
 from pytesseract import pytesseract
 import numpy as np
 from PIL import ImageGrab
 import json
 import os
+import win32gui
+
 
 class CustomDropMenu(QWidget):
     def __init__(self, config):
@@ -55,20 +56,25 @@ class CustomListItem(QWidget):
 
 class OverlayWindow(QWidget):
     toggle_signal = pyqtSignal()
-    def __init__(self, window_info, database, config, hwnd):
+    def __init__(self, database, config):
         super().__init__()
-        
-        self.toggle_signal.connect(self.toggle_visibility)
-        
-        self.x = window_info.win_x
-        self.y = window_info.win_y
-        self.width = window_info.win_width
-        self.height = window_info.win_height
-        
+        self.toggle_signal.connect(self.toggle_visibility)        
         self.database = database
         self.config = config
         
-        self.target_hwnd = hwnd
+        self.hwnd = win32gui.FindWindow(None, "Path of Exile 2")
+        
+        if self.hwnd == 0:
+            self.x = 0 
+            self.y = 0
+        else:
+            left, top, _, _ = win32gui.GetWindowRect(self.hwnd)
+            self.x = left
+            self.y = top
+            
+        self.width = 400
+        self.height = 600
+        
         self.setGeometry(
             self.x,
             self.y,
@@ -198,8 +204,15 @@ class OverlayWindow(QWidget):
                 self.bad_maps.setItemWidget(list_item, custom_widget)
                 
     def update_position(self):
-        info = get_window_info(self.target_hwnd)
-        self.setGeometry(info.win_x, info.win_y, info.win_width, info.win_height)
+        self.hwnd = win32gui.FindWindow(None, "Path of Exile 2")
+        if self.hwnd == 0:
+            self.x = 0 
+            self.y = 0
+        else:
+            left, top, _, _ = win32gui.GetWindowRect(self.hwnd)
+            self.x = left
+            self.y = top
+        self.setGeometry(self.x, self.y, self.width, self.height)
         
     def keyPressEvent(self, event):
         pass

@@ -1230,7 +1230,6 @@
   ('cycler',
    'C:\\Users\\nick\\AppData\\Local\\Programs\\Python\\Python38\\lib\\site-packages\\cycler.py',
    'PYMODULE'),
-  ('dataclass', 'D:\\PathOfExile2Overlay\\dataclass.py', 'PYMODULE'),
   ('dataclasses',
    'C:\\Users\\nick\\AppData\\Local\\Programs\\Python\\Python38\\lib\\dataclasses.py',
    'PYMODULE'),

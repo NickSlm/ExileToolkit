@@ -1,22 +1,8 @@
 import win32gui
-from dataclass import WindowInfo
 import json
 import os
 import sys
 import re
-
-def get_window_info(hwnd):
-    window_info = WindowInfo()
-    left, top, right, bottom = win32gui.GetWindowRect(hwnd)
-    window_info.win_x = left
-    window_info.win_y = top
-    window_info.win_width = right - left
-    window_info.win_height = bottom - top
-
-    left, top, right, bottom = win32gui.GetClientRect(hwnd)
-    window_info.client_width = right - left
-    window_info.client_height = bottom - top
-    return window_info
 
 
 def multi_replace_regex(text, replacements):

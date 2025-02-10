@@ -1,8 +1,6 @@
-from utils import get_window_info
 from PyQt5 import QtWidgets,QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QThread, pyqtSignal
-import win32gui
 import sys
 import os
 import threading
@@ -120,49 +118,44 @@ class KeyListenerThread(QThread):
             self.pressed_keys.discard(key_name)
 
 def main():
-    hwnd = win32gui.FindWindow(None, "Path of Exile 2")
-    if hwnd == 0:
-        raise RuntimeError("Application 'Path Of Exile 2' is not running. Exiting.")
-    else:
-        window_info = get_window_info(hwnd=hwnd)
         
-        # Load Configuration File
-        dir_path = get_exe_path()
-        config = Config(dir_path)
-        
-        # Create Database
-        maps_database = MapsDatabase(config)
-        
-        app = QApplication(sys.argv)
-        tray_icon = QSystemTrayIcon()
-        tray_icon.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["tray"])))
-        
-        menu = QMenu()
-        settings = SettingsWindow(config)
-        settings_action = QAction("Settings")
-        settings_action.triggered.connect(settings.appear)
-        exit_action = QAction("Exit")
-        exit_action.triggered.connect(application_exit)
-        
-        menu.addAction(settings_action)
-        menu.addAction(exit_action)
-        
+    # Load Configuration File
+    dir_path = get_exe_path()
+    config = Config(dir_path)
+    
+    # Create Database
+    maps_database = MapsDatabase(config)
+    
+    app = QApplication(sys.argv)
+    tray_icon = QSystemTrayIcon()
+    tray_icon.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["tray"])))
+    
+    menu = QMenu()
+    settings = SettingsWindow(config)
+    settings_action = QAction("Settings")
+    settings_action.triggered.connect(settings.appear)
+    exit_action = QAction("Exit")
+    exit_action.triggered.connect(application_exit)
+    
+    menu.addAction(settings_action)
+    menu.addAction(exit_action)
+    
 
-        tray_icon.setContextMenu(menu)
-        overlay = OverlayWindow(window_info, maps_database, config ,hwnd)
-        tooltip = TooltipApp(maps_database, config)
-        
-        handlers = {"settings":settings.appear,
-                    "overlay": overlay.toggle_visibility,
-                    "hover": tooltip.show_tooltip}
-        
-        listener_thread = KeyListenerThread(handlers)
-        listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, config, handlers))
-        listener_thread.start()
-        
-        
-        tray_icon.show()
-        sys.exit(app.exec_())
+    tray_icon.setContextMenu(menu)
+    overlay = OverlayWindow(maps_database, config)
+    tooltip = TooltipApp(maps_database, config)
+    
+    handlers = {"settings":settings.appear,
+                "overlay": overlay.toggle_visibility,
+                "hover": tooltip.show_tooltip}
+    
+    listener_thread = KeyListenerThread(handlers)
+    listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, config, handlers))
+    listener_thread.start()
+    
+    
+    tray_icon.show()
+    sys.exit(app.exec_())
     
 if __name__ == "__main__":
     main()
