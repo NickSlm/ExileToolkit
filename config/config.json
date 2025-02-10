@@ -8,7 +8,7 @@
         "note": "notes.png"
     },
     "keybinds": {
-        "overlay": "f6",
+        "overlay": "ctrl_l+g",
         "settings": "f8",
         "hover": "ctrl_l+s"
     }

@@ -1,4 +1,3 @@
-import win32gui
 import json
 import os
 import sys

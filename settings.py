@@ -41,8 +41,8 @@ class SettingsWindow(QDialog):
         self.l_2 = QLabel("Open Settings")
         self.l_3 = QLabel("Check Map")
         
-        self.qkse_1 = QKeySequenceEdit(self.config.config["keybinds"]["overlay"])
-        self.qkse_2 = QKeySequenceEdit(self.config.config["keybinds"]["settings"])
+        self.qkse_1 = QKeySequenceEdit(multi_replace_regex(self.config.config["keybinds"]["overlay"], self.nput_to_qt))
+        self.qkse_2 = QKeySequenceEdit(multi_replace_regex(self.config.config["keybinds"]["settings"], self.nput_to_qt))
         self.qkse_3 = QKeySequenceEdit(multi_replace_regex(self.config.config["keybinds"]["hover"], self.nput_to_qt))
         
         self.btn_clear_1 = QPushButton("clear")
@@ -84,8 +84,8 @@ class SettingsWindow(QDialog):
         keybinds = {
             "keybinds":
                 {
-                "overlay": qkse_1_input,
-                "settings": qkse_2_input,
+                "overlay": multi_replace_regex(qkse_1_input, self.qt_to_nput),
+                "settings": multi_replace_regex(qkse_2_input, self.qt_to_nput),
                 "hover": multi_replace_regex(qkse_3_input, self.qt_to_nput)
                 }
             }

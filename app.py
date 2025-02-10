@@ -139,7 +139,6 @@ def main():
     
     menu.addAction(settings_action)
     menu.addAction(exit_action)
-    
 
     tray_icon.setContextMenu(menu)
     overlay = OverlayWindow(maps_database, config)
@@ -152,7 +151,6 @@ def main():
     listener_thread = KeyListenerThread(handlers)
     listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, config, handlers))
     listener_thread.start()
-    
     
     tray_icon.show()
     sys.exit(app.exec_())
