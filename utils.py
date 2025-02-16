@@ -18,11 +18,15 @@ class MapsDatabase:
         self.init_db()
             
     def init_db(self):
-        with open(self.maps_path, 'r') as file:
-            try:
+        # If maps.json exists open it
+        try:
+            with open(self.maps_path, 'r') as file:
                 self.maps = json.load(file)
-            except json.JSONDecodeError as e:
-                raise RuntimeError(f"Error Loading Configuration File:{e}")
+        # If not create blank maps.json
+        except FileNotFoundError:
+            with open(self.maps_path, 'w') as file:
+                json.dump(self.maps, file)
+            
 
     def add(self, new_map):
         self.maps.update(new_map)

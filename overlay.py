@@ -1,267 +1,159 @@
+from PyQt5 import QtWidgets,QtGui
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
-from PyQt5.QtGui import *
-from PyQt5 import QtGui
-from pynput import keyboard
-from pytesseract import pytesseract
-import numpy as np
-from PIL import ImageGrab
-import json
+from PyQt5.QtCore import QThread, pyqtSignal
+import sys
 import os
-import win32gui
+import threading
+from pynput import keyboard
+from gui import OverlayWindow, TooltipApp
+from settings import SettingsWindow
+from config import Config
+from utils import MapsDatabase
 
 
-class CustomDropMenu(QWidget):
-    def __init__(self, config):
-        super().__init__()
-        self.combobox = QComboBox()
-        with open(config.config["database_path"]) as file:
-            try:
-                maps = json.load(file)
-            except json.JSONDecodeError:
-                maps = {}
+ascii_fix = {
+            '\x01': 'a', 
+            '\x02': 'b', 
+            '\x03': 'c', 
+            '\x04': 'd', 
+            '\x05': 'e', 
+            '\x06': 'f', 
+            '\x07': 'g',  
+            '\x08': 'h', 
+            '\x09': 'i', 
+            '\x0a': 'j', 
+            '\x0b': 'k', 
+            '\x0c': 'l', 
+            '\x0d': 'm', 
+            '\x0e': 'n', 
+            '\x0f': 'o', 
+            '\x10': 'p', 
+            '\x11': 'q', 
+            '\x12': 'r', 
+            '\x13': 's', 
+            '\x14': 't', 
+            '\x15': 'u', 
+            '\x16': 'v', 
+            '\x17': 'w', 
+            '\x18': 'x', 
+            '\x19': 'y', 
+            '\x1a': 'z', 
+            }
+
+def on_key_press(key, config, handlers):
+    keybinds = load_keybinds(config)
+    for action, keybind in keybinds.items():
         
-        for map, link in maps.items():
-            self.combobox.addItem(map)
+        if key == keybind:
+            handler = handlers.get(action)
+            if handler:
+                if hasattr(handler, "__func__"):
+                    if handler.__func__.__name__ == "show_tooltip":
+                        handler()
+                    else:
+                        handler()  
+            return
+
+def application_exit():
+    QApplication.instance().quit()
+
+def get_exe_path():
+    if hasattr(sys, "_MEIPASS"):
+        base_path = sys._MEIPASS
+        if "_internal" in base_path:
+            return base_path
+    else:
+        return os.path.dirname(__file__)   
     
-        layout = QVBoxLayout()
-        layout.addWidget(self.combobox)
-        self.setLayout(layout)  # Set layout for this widget
-    def get_selected_item(self):
-        return self.combobox.currentText()
-    
-class CustomListItem(QWidget):
-    def __init__(self, map, url, config, button_callback, parent=None):
-        super().__init__()
-        
-        self.line_text = QLabel(self)
-        if url != "None":
-            self.line_text.setToolTip(url.split("/")[-1])
-            self.line_text.setText(f'<a href="{url}" style="color: white; text-decoration: none;">{map}</a>')
-        else:
-            self.line_text.setText(map)    
-        self.line_text.setOpenExternalLinks(True)
-        
-        self.line_push_button = QPushButton(self)
-        self.line_push_button.setFixedSize(16,16)
-        self.line_push_button.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["delete"])))
-        self.line_push_button.setObjectName(map)
-                
-        layout = QHBoxLayout(self)
-        layout.addWidget(self.line_text)
-        layout.addWidget(self.line_push_button)
-        self.setLayout(layout)
+def load_keybinds(config):
+    # Reload the config file for changes that might accured
+    config.reload()
 
-        self.line_push_button.clicked.connect(button_callback)
+    keybinds = {}
+    for action, keybind in config.config["keybinds"].items():
+        try:
+            if hasattr(keyboard.Key, keybind) or isinstance(keybind, str):
+                keybinds[action] = keybind
+        except ArithmeticError:
+            raise ValueError(f"Invalid keybind: {keybind}")
+    return keybinds
 
-class OverlayWindow(QWidget):
-    toggle_signal = pyqtSignal()
-    def __init__(self, database, config):
+class KeyListenerThread(QThread):
+    key_pressed = pyqtSignal(str)
+    def __init__(self, handlers):
         super().__init__()
-        self.toggle_signal.connect(self.toggle_visibility)        
-        self.database = database
-        self.config = config
-        
-        self.hwnd = win32gui.FindWindow(None, "Path of Exile 2")
-        
-        if self.hwnd == 0:
-            self.x = 0 
-            self.y = 0
-        else:
-            left, top, _, _ = win32gui.GetWindowRect(self.hwnd)
-            self.x = left
-            self.y = top
+        self.handlers = handlers
+        self.pressed_keys = set()
+        self.modifiers = {"ctrl_l", "shift", "alt_l"}
+
+    def run(self):
+        with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+            listener.join()
             
-        self.width = 400
-        self.height = 600
-        
-        self.setGeometry(
-            self.x,
-            self.y,
-            self.width,
-            self.height
-            )
-        self.setWindowFlags(Qt.Window|Qt.X11BypassWindowManagerHint|Qt.WindowStaysOnTopHint|Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet("""
-                           QLabel {
-                               background-color: rgba(0, 0, 0, 0);
-                               color: rgba(255, 255, 255,255);
-                               text-align: center;
-                           }
-                           QListWidget {
-                               background-color: rgba(0, 0, 0, 204);
-                           }
-                           QLineEdit {
-                               background-color: rgba(0, 0, 0, 204);
-                               color: rgba(255, 255, 255, 255);
-                           }
-
-                           """)
-        
-        self.update_position()
-        self.init_ui()
-        timer = QTimer(self)
-        timer.timeout.connect(self.update_position)
-        timer.start(16)
+    def get_key_name(self, key):
+        if isinstance(key, keyboard.KeyCode) and key.char is not None:
+            key_name = key.char
+            if self.pressed_keys.intersection(self.modifiers):
+                key_name = chr(key.vk)
+        elif isinstance(key, keyboard.Key):
+            key_name = key.name       
+        return key_name.lower()
     
-    def init_ui(self):
-        layout = QGridLayout()
-        self.setFixedSize(600,400)
-        input_layout_1_0 = QHBoxLayout()
-        input_layout_1_1 = QHBoxLayout()
-        
-        # Create List Headers
-        header_1 = QLabel("Good Map Bosses")
-        header_1.setAlignment(Qt.AlignCenter)
-        header_1.setStyleSheet("font-size: 16px;")
-        
-        header_2 = QLabel("Bad Map Bosses")
-        header_2.setStyleSheet("font-size: 16px;")
-        header_2.setAlignment(Qt.AlignCenter)
-        # 
-        
-        layout.addWidget(header_1, 0, 0)
-        layout.addWidget(header_2, 0, 1)
-
-        self.good_maps = QListWidget()
-        self.bad_maps = QListWidget()
-
-        self.maps = self.database.maps
-
-        layout.addWidget(self.good_maps, 1, 0)
-        layout.addWidget(self.bad_maps, 1, 1)
-        
-        # Add "Input Item To List" To HBoxLayout
-        combobox = CustomDropMenu(self.config)
-        submit_1 = QPushButton("Good")
-        submit_1.clicked.connect(lambda: self.add_item_button(combobox.get_selected_item(), "Good"))
-        submit_2 = QPushButton("Bad")
-        submit_2.clicked.connect(lambda: self.add_item_button(combobox.get_selected_item(), "Bad"))
-
-        input_layout_1_0.addWidget(combobox)
-        input_layout_1_1.addWidget(submit_1)
-        input_layout_1_1.addWidget(submit_2)
-
-        
-        layout.addLayout(input_layout_1_0, 2, 0)
-        layout.addLayout(input_layout_1_1, 2, 1)
-
-        
-        self.setLayout(layout)
-
-
-        # Populate the Lists
-        for map, map_type in self.maps.items():
-            if map_type == "Good":
-                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
-                list_item = QListWidgetItem(self.good_maps)
-                list_item.setSizeHint(custom_widget.sizeHint())
-                self.good_maps.addItem(list_item)
-                self.good_maps.setItemWidget(list_item, custom_widget)
-            else:
-                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
-                list_item = QListWidgetItem(self.bad_maps)
-                list_item.setSizeHint(custom_widget.sizeHint())
-                self.bad_maps.addItem(list_item)
-                self.bad_maps.setItemWidget(list_item, custom_widget)
-
-    def remove_item(self, map, map_type):
-        sender = self.sender()
-        push_button = self.findChild(QPushButton, sender.objectName())  # Find the button using objectName
-        
-        map_list = self.good_maps if map_type == "Good" else self.bad_maps
-        for row in range(map_list.count()):
-            item = map_list.item(row)  
-            widget = map_list.itemWidget(item)
+    def on_press(self, key):
+        key_name = self.get_key_name(key)
+        if key_name:
+            self.pressed_keys.add(key_name)
             
-            if widget:
-                button = widget.findChild(QPushButton)  
-                if button and button.objectName() == push_button.objectName():
-                    map_list.removeItemWidget(item)
-                    map_list.takeItem(row)  
-                    
-                    self.database.remove(push_button.objectName())
-                    break
+        pressed_modifiers = self.pressed_keys.intersection(self.modifiers)
+        modifiers_str = '+'.join(pressed_modifiers) if pressed_modifiers else ''
+        if pressed_modifiers and key_name not in pressed_modifiers:
+            self.key_pressed.emit(f'{modifiers_str}+{key_name}')
+        else:
+            self.key_pressed.emit(key_name)
 
-    def add_item_button(self, map, map_type):
-        # Update the local database and add to real time list view
-        if self.database.exist(map):
-            print("map in, cunt")
-        else:
-            self.database.add({map: map_type})
-            if map_type == "Good":
-                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
-                list_item = QListWidgetItem(self.good_maps)
-                list_item.setSizeHint(custom_widget.sizeHint())
-                self.good_maps.addItem(list_item)
-                self.good_maps.setItemWidget(list_item, custom_widget)
-            else:
-                custom_widget = CustomListItem(map, self.database.get(map), self.config, button_callback=lambda map=map, map_type=map_type:self.remove_item(map, map_type))
-                list_item = QListWidgetItem(self.bad_maps)
-                list_item.setSizeHint(custom_widget.sizeHint())
-                self.bad_maps.addItem(list_item)
-                self.bad_maps.setItemWidget(list_item, custom_widget)
-                
-    def update_position(self):
-        self.hwnd = win32gui.FindWindow(None, "Path of Exile 2")
-        if self.hwnd == 0:
-            self.x = 0 
-            self.y = 0
-        else:
-            left, top, _, _ = win32gui.GetWindowRect(self.hwnd)
-            self.x = left
-            self.y = top
-        self.setGeometry(self.x, self.y, self.width, self.height)
+
+    def on_release(self, key):
+        key_name = self.get_key_name(key)
+        if key_name:
+            self.pressed_keys.discard(key_name)
+
+def main():
         
-    def keyPressEvent(self, event):
-        pass
+    # Load Configuration File
+    dir_path = get_exe_path()
+    config = Config(dir_path)
     
-    def toggle_visibility(self):
-        if self.isVisible():
-            self.hide()
-        else:
-            self.show()
-                  
-class TooltipApp(QWidget):
-    pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-    def __init__(self, database, config):
-        super().__init__()
-        self.database = database
-        self.config = config
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.NoDropShadowWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+    # Create Database
+    maps_database = MapsDatabase(config)
+    
+    app = QApplication(sys.argv)
+    tray_icon = QSystemTrayIcon()
+    tray_icon.setIcon(QtGui.QIcon(os.path.join(config.config["assets_path"], config.config["icons"]["tray"])))
+    
+    menu = QMenu()
+    settings = SettingsWindow(config)
+    settings_action = QAction("Settings")
+    settings_action.triggered.connect(settings.appear)
+    exit_action = QAction("Exit")
+    exit_action.triggered.connect(application_exit)
+    
+    menu.addAction(settings_action)
+    menu.addAction(exit_action)
 
-        self.label = QLabel("", self)
-        self.label.setStyleSheet("background: transparent; color: white; font-size: 14px;")
-        position = QCursor.pos()
-        
-        self.label.setText(f"{position.x(), position.y()}")
-        self.label.adjustSize()
-        self.label.resize(self.label.sizeHint())
-        self.move(position.x() + 10, position.y() - 10) 
-        
-        self.update_position()
-        
-        timer = QTimer(self)
-        timer.timeout.connect(self.update_position)
-        timer.start(16)
-        
-    def show_tooltip(self, position=None):
-        if self.isVisible():
-            self.hide()
-        else:
-            position = QCursor.pos()
-            left ,top = position.x(), position.y()
-            image = ImageGrab.grab(bbox=(left - 128, top - 24, left + 128, top + 24))
-            map = pytesseract.image_to_string(image)
-            map_type = self.database.get_map_type(map.lower())
-            self.label.setText(map_type)
-            self.label.adjustSize()
-            self.label.resize(self.label.sizeHint())
-            self.show()
-
-    def update_position(self):
-        position = QCursor.pos()
-        self.move(position.x() + 10, position.y() - 10)
-                 
+    tray_icon.setContextMenu(menu)
+    overlay = OverlayWindow(maps_database, config)
+    tooltip = TooltipApp(maps_database, config)
+    
+    handlers = {"settings":settings.appear,
+                "overlay": overlay.toggle_visibility,
+                "hover": tooltip.show_tooltip}
+    
+    listener_thread = KeyListenerThread(handlers)
+    listener_thread.key_pressed.connect(lambda key_name: on_key_press(key_name, config, handlers))
+    listener_thread.start()
+    
+    tray_icon.show()
+    sys.exit(app.exec_())
+    
+if __name__ == "__main__":
+    main()

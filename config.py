@@ -15,9 +15,11 @@ class Config:
         database_path = os.path.join(self.dir_path, "data\map_database.json")
         maps_path = os.path.join(self.dir_path, "data\maps.json")
         assets_path = os.path.join(self.dir_path, "assets\icons")
+        tesseract_path = os.path.join(self.dir_path, "tesseract.exe")
         new_config = {"database_path": database_path,
                       "maps_path": maps_path,
-                      "assets_path": assets_path}
+                      "assets_path": assets_path,
+                      "tesseract_path": tesseract_path}
         self.config.update(new_config)
         with open(self.file_name, 'w') as file:
             json.dump(self.config, file, indent=4)

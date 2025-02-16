@@ -90,6 +90,7 @@ class SettingsWindow(QDialog):
                 }
             }
         self.config.update(keybinds)
+        self.hide()
             
     def appear(self):
         if self.isVisible():
