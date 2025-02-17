@@ -5,10 +5,10 @@ import sys
 import os
 import threading
 from pynput import keyboard
-from gui import OverlayWindow, TooltipApp
-from settings import SettingsWindow
-from config import Config
-from utils import MapsDatabase
+from src.gui.gui import OverlayWindow, TooltipApp
+from src.core.settings import SettingsWindow
+from src.core.config import Config
+from src.core.utils import MapsDatabase
 
 
 ascii_fix = {
@@ -43,7 +43,6 @@ ascii_fix = {
 def on_key_press(key, config, handlers):
     keybinds = load_keybinds(config)
     for action, keybind in keybinds.items():
-        
         if key == keybind:
             handler = handlers.get(action)
             if handler:
@@ -118,7 +117,6 @@ class KeyListenerThread(QThread):
             self.pressed_keys.discard(key_name)
 
 def main():
-        
     # Load Configuration File
     dir_path = get_exe_path()
     config = Config(dir_path)

@@ -2,7 +2,7 @@
     "database_path": "D:\\Projects\\PathOfExile2Overlay\\data\\map_database.json",
     "maps_path": "D:\\Projects\\PathOfExile2Overlay\\data\\maps.json",
     "assets_path": "D:\\Projects\\PathOfExile2Overlay\\assets\\icons",
-    "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+    "tesseract_path": "",
     "icons": {
         "delete": "delete.png",
         "tray": "trayIcon.png",
@@ -10,7 +10,7 @@
     },
     "keybinds": {
         "overlay": "ctrl_l+g",
-        "settings": "f6",
+        "settings": "f8",
         "hover": "ctrl_l+s"
     }
 }

@@ -6,7 +6,7 @@ from pathlib import Path
 import json
 import re
 from pynput import keyboard
-from utils import multi_replace_regex
+from src.core.utils import multi_replace_regex
 
 
 class SettingsWindow(QDialog):

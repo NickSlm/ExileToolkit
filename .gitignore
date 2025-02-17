@@ -1,3 +1,6 @@
 maps.json
 dist/
 C:/Program Files/Tesseract-OCR/tesseract.exe
+__pycache__/
+build/
+*.spec
